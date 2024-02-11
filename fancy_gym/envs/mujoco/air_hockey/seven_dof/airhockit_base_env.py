@@ -84,7 +84,7 @@ class AirhocKIT2023BaseEnv(AirHockeySingle):
         if link_constr.max() > 0:
             fatal_rew += link_constr.max()
 
-        return -fatal_rew
+        return fatal_rew
 
     def check_fatal(self, obs):
         fatal_rew = 0

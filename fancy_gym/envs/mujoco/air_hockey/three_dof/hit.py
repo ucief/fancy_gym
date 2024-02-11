@@ -23,10 +23,9 @@ class AirHockeyHit(AirHockeySingle):
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
 
     def setup(self, state=None):
+        self._setup_metrics()
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
-
-        # self.init_state = np.array([-0.9273, 0.9273, np.pi / 2])
 
         self._write_data("puck_x_pos", puck_pos[0])
         self._write_data("puck_y_pos", puck_pos[1])
@@ -46,7 +45,29 @@ class AirHockeyHit(AirHockeySingle):
         super(AirHockeyHit, self).setup(state)
 
     def reward(self, state, action, next_state, absorbing):
-        return 0
+        rew = 0
+        puck_pos, puck_vel = self.get_puck(next_state)
+        ee_pos, _ = self.get_ee()
+        ee_vel = (ee_pos - self.last_ee_pos) / 0.02
+        self.last_ee_pos = ee_pos
+
+        if puck_vel[0] < 0.25 and puck_pos[0] < 0:
+            ee_puck_dir = (puck_pos - ee_pos)[:2]
+            ee_puck_dir = ee_puck_dir / np.linalg.norm(ee_puck_dir)
+            rew += 1 * max(0, np.dot(ee_puck_dir, ee_vel[:2]))
+        else:
+            rew += 10 * np.linalg.norm(puck_vel[:2])
+
+        if self.has_scored:
+            rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
+
+        return rew
+
+    def reset(self, *args):
+        obs = super().reset()
+        self.last_ee_pos, _ = self.get_ee()
+        return obs
+
 
     def is_absorbing(self, obs):
         puck_pos, puck_vel = self.get_puck(obs)
@@ -54,6 +75,21 @@ class AirHockeyHit(AirHockeySingle):
         if puck_pos[0] > 0 and puck_vel[0] < 0:
             return True
         return super(AirHockeyHit, self).is_absorbing(obs)
+    
+    def _setup_metrics(self):
+        self.episode_steps = 0
+        self.has_scored = False
+
+    def _step_finalize(self):
+        cur_obs = self._create_observation(self.obs_helper._build_obs(self._data))
+        puck_pos, _ = self.get_puck(cur_obs)  # world frame [x, y, z] and [x', y', z']
+
+        if not self.has_scored:
+            boundary = np.array([self.env_info['table']['length'], self.env_info['table']['width']]) / 2
+            self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
+
+        self.episode_steps += 1
+        return super()._step_finalize()
 
 
 if __name__ == '__main__':
@@ -66,7 +102,7 @@ if __name__ == '__main__':
     gamma = 1.
     steps = 0
     while True:
-        action = np.zeros(3)
+        action = 0.1*np.ones(3)
 
         observation, reward, done, info = env.step(action)
         env.render()
