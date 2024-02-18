@@ -49,4 +49,4 @@ class MPWrapper(RawInterfaceWrapper):
 
     @property
     def current_vel(self) -> Union[float, int, np.ndarray, Tuple]:
-        return self.env.unwrapped.base_env.q_pos_prev[:6].copy() # ignore the last joint
+        return self.env.unwrapped.base_env.q_vel_prev[:6].copy() # ignore the last joint

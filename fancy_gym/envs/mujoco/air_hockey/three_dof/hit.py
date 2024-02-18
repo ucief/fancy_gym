@@ -21,6 +21,7 @@ class AirHockeyHit(AirHockeySingle):
         self.hit_range = np.array([[-0.7, -0.2], [-hit_width, hit_width]])  # Table Frame
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
+        self.noise = True
 
     def setup(self, state=None):
         self._setup_metrics()
@@ -63,16 +64,56 @@ class AirHockeyHit(AirHockeySingle):
 
         return rew
 
+    def add_noise(self, obs):
+        if not self.noise:
+            return
+        obs[self.env_info["puck_pos_ids"]] += np.random.normal(0, 0.001, 3)
+        obs[self.env_info["puck_vel_ids"]] += np.random.normal(0, 0.1, 3)
+
     def reset(self, *args):
         obs = super().reset()
         self.last_ee_pos, _ = self.get_ee()
         return obs
 
+    def step(self, action):
+        
+        obs, rew, done, info = super().step(action)
+        self.add_noise(obs)
+
+        fatal_rew = self.check_fatal(obs)
+        if fatal_rew != 0:
+            return obs, fatal_rew, True, info
+
+        return obs, rew, done, info
+    
+    def check_fatal(self, obs):
+        fatal_rew = 0
+
+        q = obs[self.env_info["joint_pos_ids"]]
+        qd = obs[self.env_info["joint_vel_ids"]]
+        constraint_values_obs = self.env_info["constraints"].fun(q, qd)
+        
+        violation_j_pos_constr = constraint_values_obs["joint_pos_constr"][constraint_values_obs["joint_pos_constr"]>0]
+        fatal_rew += np.linalg.norm(violation_j_pos_constr)
+
+        violation_j_vel_constr = constraint_values_obs["joint_vel_constr"][constraint_values_obs["joint_vel_constr"]>0]
+        fatal_rew += np.linalg.norm(violation_j_vel_constr)
+
+        violation_ee_constr = constraint_values_obs["ee_constr"][constraint_values_obs["ee_constr"]>0]
+        fatal_rew += np.linalg.norm(violation_ee_constr)
+
+        return -fatal_rew
 
     def is_absorbing(self, obs):
         puck_pos, puck_vel = self.get_puck(obs)
         # Stop if the puck bounces back on the opponents wall
         if puck_pos[0] > 0 and puck_vel[0] < 0:
+            return True
+            
+        if self.has_scored:
+            return True
+
+        if self.episode_steps == self._mdp_info.horizon:
             return True
         return super(AirHockeyHit, self).is_absorbing(obs)
     
