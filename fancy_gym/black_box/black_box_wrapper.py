@@ -107,8 +107,8 @@ class BlackBoxWrapper(gym.ObservationWrapper):
         init_time = np.array(
             0 if not self.do_replanning else self.current_traj_steps * self.dt)
 
-        condition_pos = self.condition_pos if self.condition_pos is not None else self.env.get_wrapper_attr('current_pos')
-        condition_vel = self.condition_vel if self.condition_vel is not None else self.env.get_wrapper_attr('current_vel')
+        condition_pos = self.condition_pos if self.condition_pos is not None else self.env.current_pos
+        condition_vel = self.condition_vel if self.condition_vel is not None else self.env.current_vel
 
         self.traj_gen.set_initial_conditions(
             init_time, condition_pos, condition_vel)
