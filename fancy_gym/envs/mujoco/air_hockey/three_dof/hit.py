@@ -22,6 +22,7 @@ class AirHockeyHit(AirHockeySingle):
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
+        self.y_penalty_type = "linear" # "linear" or "quadratic"
 
     def setup(self, state=None):
         self._setup_metrics()
@@ -52,16 +53,24 @@ class AirHockeyHit(AirHockeySingle):
         ee_vel = (ee_pos - self.last_ee_pos) / 0.02
         self.last_ee_pos = ee_pos
 
+        # Reward for moving towards the puck
+        # TODO higher reward for hitting than only moving towards
         if puck_vel[0] < 0.25 and puck_pos[0] < 0:
             ee_puck_dir = (puck_pos - ee_pos)[:2]
             ee_puck_dir = ee_puck_dir / np.linalg.norm(ee_puck_dir)
             rew += 1 * max(0, np.dot(ee_puck_dir, ee_vel[:2]))
+        
+        # Reward for higher puck velocity
         else:
             rew += 10 * np.linalg.norm(puck_vel[:2])
 
+        # Reward for scoring
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
+        # Penalty for ee_pos close to walls of the table (y-direction)
+        rew -= self.get_border_penalty(ee_pos)   
+                
         return rew
 
     def add_noise(self, obs):
@@ -76,7 +85,6 @@ class AirHockeyHit(AirHockeySingle):
         return obs
 
     def step(self, action):
-        
         obs, rew, done, info = super().step(action)
         self.add_noise(obs)
 
@@ -103,7 +111,29 @@ class AirHockeyHit(AirHockeySingle):
         fatal_rew += np.linalg.norm(violation_ee_constr)
 
         return -fatal_rew
+    
 
+    def get_border_penalty(self, ee_pos):
+        """
+        Returns penalty (negative reward) for the end effector being close to the table walls.
+
+        Returns absolute value of the penalty! -> always positive -> must be subtracted!
+        """
+        penalty = 0
+        y_boundary = np.abs(self.env_info['table']['width'] / 2.5)
+        
+        if np.abs(ee_pos[1]) > y_boundary: # Penalty ignores inner 80% of the table
+            if self.y_penalty_type == "linear":
+                penalty = (np.abs(ee_pos[1])) * 10
+                return penalty
+            
+            elif self.y_penalty_type == "quadratic":
+                penalty = (np.abs(ee_pos[1]))**2 * 10
+                return penalty
+        
+        return penalty
+
+        
     def is_absorbing(self, obs):
         puck_pos, puck_vel = self.get_puck(obs)
         # Stop if the puck bounces back on the opponents wall
