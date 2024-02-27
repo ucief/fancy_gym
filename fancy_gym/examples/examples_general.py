@@ -20,8 +20,8 @@ def example_general(env_id="Pendulum-v1", seed=1, iterations=1000, render=True):
     Returns:
 
     """
-
-    env = gym.make(env_id)
+    render_mode = "human" if render else "rgb_array"
+    env = gym.make(env_id,render_mode=render_mode)
     rewards = 0
     obs = env.reset(seed=seed)
     print("Observation shape: ", env.observation_space.shape)
@@ -87,7 +87,7 @@ def example_async(env_id="fancy/HoleReacher-v0", n_cpu=4, seed=int('533D', 16), 
 
 
 if __name__ == '__main__':
-    render = False
+    render = True
 
     # # Basic gym task
     # example_general("Pendulum-v1", seed=10, iterations=200, render=render)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     # example_general("fancy/Reacher5d-v0", seed=10, iterations=200, render=render)
 
     # # OpenAI Mujoco task
-    example_general('fancy/AirHockey-7dof-hit-airhockit2023-v0', seed=10, render=render)
+    example_general('fancy/AirHockey-3dof-hit-v0', seed=10, render=render)
     print('FINISHED')
     # Vectorized multiprocessing environments
     # example_async(env_id="HoleReacher-v0", n_cpu=2, seed=int('533D', 16), n_samples=2 * 200)
