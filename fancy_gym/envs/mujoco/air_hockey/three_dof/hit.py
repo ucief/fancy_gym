@@ -22,7 +22,7 @@ class AirHockeyHit(AirHockeySingle):
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
-        self.y_penalty_type = "linear" # "linear" or "quadratic"
+        self.penalty_type = "linear" # "linear" or "quadratic"
 
     def setup(self, state=None):
         self._setup_metrics()
@@ -120,15 +120,15 @@ class AirHockeyHit(AirHockeySingle):
         Returns absolute value of the penalty! -> always positive -> must be subtracted!
         """
         penalty = 0
-        y_boundary = np.abs(self.env_info['table']['width'] / 2.5)
-        
-        if np.abs(ee_pos[1]) > y_boundary: # Penalty ignores inner 80% of the table
-            if self.y_penalty_type == "linear":
-                penalty = (np.abs(ee_pos[1])) * 10
+        boundary = np.array([self.env_info['table']['length'] /2.2, self.env_info['table']['width'] /2.5])
+
+        if np.any(np.abs(ee_pos[:2]) > boundary): # Penalty ignores inner 80%(y) and 90%(x) of the table
+            if self.penalty_type == "linear":
+                penalty = (np.abs(ee_pos[:2])).sum() * 10
                 return penalty
             
-            elif self.y_penalty_type == "quadratic":
-                penalty = (np.abs(ee_pos[1]))**2 * 10
+            elif self.penalty_type == "quadratic":
+                penalty = (np.abs(ee_pos[:2])).sum()**2 * 10
                 return penalty
         
         return penalty
