@@ -78,6 +78,7 @@ class AirHockeyHit(AirHockeySingle):
             return
         obs[self.env_info["puck_pos_ids"]] += np.random.normal(0, 0.001, 3)
         obs[self.env_info["puck_vel_ids"]] += np.random.normal(0, 0.1, 3)
+        return obs
 
     def reset(self, *args):
         obs = super().reset()
@@ -86,11 +87,11 @@ class AirHockeyHit(AirHockeySingle):
 
     def step(self, action):
         obs, rew, done, info = super().step(action)
-        self.add_noise(obs)
+        obs = self.add_noise(obs)
 
         fatal_rew = self.check_fatal(obs)
         if fatal_rew != 0:
-            return obs, fatal_rew, True, info
+            return obs, -2000, True, info
 
         return obs, rew, done, info
     
