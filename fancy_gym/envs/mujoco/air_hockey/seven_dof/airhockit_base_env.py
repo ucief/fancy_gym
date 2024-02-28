@@ -39,7 +39,7 @@ class AirhocKIT2023BaseEnv(AirHockeySingle):
         return self.filter_obs(obs)
 
     def step(self, action):
-        action /= 10
+        #action /= 10
 
         new_vel = self.interp_vel + action
 
@@ -47,21 +47,21 @@ class AirhocKIT2023BaseEnv(AirHockeySingle):
         new_pos = self.interp_pos + self.interp_vel * 0.02 + (1 / 2) * self.last_acceleration * (0.02 ** 2) + (
                     1 / 6) * jerk * (0.02 ** 3)
         abs_action = np.vstack([np.hstack([new_pos, 0]), np.hstack([new_vel, 0])])
+        abs_action = np.vstack([np.hstack([action, 0]), np.hstack([0]*7)])
 
         self.interp_pos = new_pos
         self.interp_vel = new_vel
         self.last_acceleration += jerk * 0.02
 
-        obs, rew, done, info = super().step(abs_action)
+        obs, rew, done, info = super().step(np.hstack([action, 0]))
         obs = self.add_noise(obs)
         self.last_planned_world_pos = self._fk(self.interp_pos)
         obs = np.hstack([
             obs, self.interp_pos, self.interp_vel, self.last_acceleration, self.last_planned_world_pos
         ])
-
         fatal_rew = self.check_fatal(obs)
         if fatal_rew != 0:
-            return self.filter_obs(obs), fatal_rew, True, info
+            return self.filter_obs(obs), fatal_rew*100, True, info
 
         return self.filter_obs(obs), rew, done, info
 

@@ -112,7 +112,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         return super()._step_finalize()
 
     def reward(self, state, action, next_state, absorbing):
-        rew = 0
+        rew = 0.05 # give a small reward for every time step the ee stays inside the boundary
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
         ee_vel = (ee_pos - self.last_ee_pos) / 0.02

@@ -38,7 +38,7 @@ def example_mp(env_name="fancy_ProMP/HoleReacher-v0", seed=1, iterations=1, rend
         obs, reward, terminated, truncated, info = env.step(ac)
         # Aggregated returns
         returns += reward
-
+        print(info['trajectory_length'])
         if terminated or truncated:
             print(reward)
             obs = env.reset()
@@ -223,7 +223,7 @@ def example_fully_custom_mp_alternative(seed=1, iterations=1, render=True):
         ac = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(ac)
         rewards += reward
-
+        print(info[0])
         if terminated or truncated:
             print(rewards)
             rewards = 0
@@ -273,8 +273,8 @@ def main():
     # # Custom MP
     # example_fully_custom_mp(seed=10, iterations=1, render=render)
     # example_fully_custom_mp_alternative(seed=10, iterations=1, render=render)
-    #example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
-    example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=20, render=True)
+    example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
+    #example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=20, render=True)
 
 
 if __name__ == '__main__':
