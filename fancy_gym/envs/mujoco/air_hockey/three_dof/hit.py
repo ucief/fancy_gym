@@ -88,9 +88,10 @@ class AirHockeyHit(AirHockeySingle):
         obs, rew, done, info = super().step(action)
         self.add_noise(obs)
 
+        # penalty for ee leaving the boundarys
         fatal_rew = self.check_fatal(obs)
         if fatal_rew != 0:
-            return obs, fatal_rew, True, info
+            return obs, fatal_rew*100, True, info
 
         return obs, rew, done, info
     
