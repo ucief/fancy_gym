@@ -22,7 +22,7 @@ class AirHockeyHit(AirHockeySingle):
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
-        self.penalty_type = "linear" # "linear" or "quadratic"
+        self.penalty_type = "quadratic" # "linear" or "quadratic"
 
     def setup(self, state=None):
         self._setup_metrics()
