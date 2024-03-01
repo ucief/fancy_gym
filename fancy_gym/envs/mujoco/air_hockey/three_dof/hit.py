@@ -11,7 +11,9 @@ class AirHockeyHit(AirHockeySingle):
         """
         Constructor
         Args:
-            moving_init(bool, False): If true, initialize the puck with inital velocity.
+            moving_init(bool, False):       If true, initialize the puck with inital velocity.
+            penalty_type(String, 'None'):   Defines the type of penalty, if the ee is close to the constraints. 
+                                            Possible is 'None', 'linear', 'quadratic'
         """
         super().__init__(gamma=gamma, horizon=horizon, viewer_params=viewer_params)
 
@@ -23,7 +25,6 @@ class AirHockeyHit(AirHockeySingle):
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
         self.penalty_type = penalty_type # "linear" or "quadratic"
-        print(penalty_type)
 
     def setup(self, state=None):
         self._setup_metrics()
@@ -90,8 +91,10 @@ class AirHockeyHit(AirHockeySingle):
         obs, rew, done, info = super().step(action)
         obs = self.add_noise(obs)
 
+        info['fatal'] = 0
         fatal_rew = self.check_fatal(obs)
         if fatal_rew != 0:
+            info['fatal'] = 1
             return obs, -2000, True, info
 
         return obs, rew, done, info
