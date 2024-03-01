@@ -274,7 +274,9 @@ def main():
     # example_fully_custom_mp(seed=10, iterations=1, render=render)
     # example_fully_custom_mp_alternative(seed=10, iterations=1, render=render)
     #example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
-    example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=20, render=True)
+    example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=1, render=False)
+    example_mp("fancy_ProDMP/AirHockey-3dof-hit-linear-penalty", seed=10, iterations=1, render=False)
+    example_mp("fancy_ProDMP/AirHockey-3dof-hit-quadratic-penalty", seed=10, iterations=1, render=False)
 
 
 if __name__ == '__main__':

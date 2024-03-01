@@ -306,7 +306,7 @@ for env_mode in ["7dof-hit", "7dof-defend", "7dof-hit-airhockit2023", "7dof-defe
     )
 
 # Air Hockey 3dof environments
-for env_mode in ["3dof-hit", "3dof-defend"]:
+for env_mode in ["3dof-hit", "3dof-hit-linear-penalty", "3dof-hit-quadratic-penalty", "3dof-defend"]:
     register(
         id=f'fancy/AirHockey-{env_mode}-v0',
         entry_point='fancy_gym.envs.mujoco:AirHockeyEnv',

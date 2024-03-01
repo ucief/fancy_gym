@@ -7,7 +7,7 @@ class AirHockeyHit(AirHockeySingle):
     Class for the air hockey hitting task.
     """
 
-    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type = 'None'):
         """
         Constructor
         Args:
@@ -22,7 +22,8 @@ class AirHockeyHit(AirHockeySingle):
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
-        self.penalty_type = "quadratic" # "linear" or "quadratic"
+        self.penalty_type = penalty_type # "linear" or "quadratic"
+        print(penalty_type)
 
     def setup(self, state=None):
         self._setup_metrics()

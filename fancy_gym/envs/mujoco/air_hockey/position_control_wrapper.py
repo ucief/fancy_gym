@@ -259,6 +259,15 @@ class PositionControlPlanar(PositionControl):
 class PlanarPositionHit(PositionControlPlanar, three_dof.AirHockeyHit):
     pass
 
+class PlanarPositionHit_linear_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='linear', *args, **kwargs)
+
+class PlanarPositionHit_quadratic_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='quadratic', *args, **kwargs)
+
+
 
 class PlanarPositionDefend(PositionControlPlanar, three_dof.AirHockeyDefend):
     pass

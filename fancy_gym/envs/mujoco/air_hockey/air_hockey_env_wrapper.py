@@ -31,6 +31,8 @@ class AirHockeyEnv(Environment):
             "7dof-defend": position.IiwaPositionDefend,
 
             "3dof-hit": position.PlanarPositionHit,
+            "3dof-hit-linear-penalty": position.PlanarPositionHit_linear_penalty,
+            "3dof-hit-quadratic-penalty": position.PlanarPositionHit_quadratic_penalty,
             "3dof-defend": position.PlanarPositionDefend,
 
             "7dof-hit-airhockit2023": position.IiwaPositionHitAirhocKIT2023,
