@@ -31,16 +31,30 @@ def example_mp(env_name="fancy_ProMP/HoleReacher-v0", seed=1, iterations=1, rend
         # Now the action space is not the raw action but the parametrization of the trajectory generator,
         # such as a ProMP
         ac = env.action_space.sample()
-        print(ac)
+        #print(ac)
         # This executes a full trajectory and gives back the context (obs) of the last step in the trajectory, or the
         # full observation space of the last step, if replanning/sub-trajectory learning is used. The 'reward' is equal
         # to the return of a trajectory. Default is the sum over the step-wise rewards.
         obs, reward, terminated, truncated, info = env.step(ac)
+        try:
+            fatal = any(info['fatal'])
+            if fatal:
+                print('Fatal')
+            else:
+                print('Not Fatal')
+        except:
+            pass
+        try:
+            success = any(info['success'])
+            if success:
+                print('Success')
+        except:
+            pass
         # Aggregated returns
         returns += reward
 
         if terminated or truncated:
-            print(reward)
+            #print(reward)
             obs = env.reset()
     env.close()
 
@@ -273,10 +287,11 @@ def main():
     # # Custom MP
     # example_fully_custom_mp(seed=10, iterations=1, render=render)
     # example_fully_custom_mp_alternative(seed=10, iterations=1, render=render)
-    #example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
-    example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=1, render=False)
-    example_mp("fancy_ProDMP/AirHockey-3dof-hit-linear-penalty", seed=10, iterations=1, render=False)
-    example_mp("fancy_ProDMP/AirHockey-3dof-hit-quadratic-penalty", seed=10, iterations=1, render=False)
+    example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
+    #example_mp("fancy/AirHockey-7dof-hit-v0", seed=10, iterations=20, render=render)
+    #example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=10, render=True)
+    #example_mp("fancy_ProDMP/AirHockey-3dof-hit-linear-penalty", seed=10, iterations=10, render=True)
+    #example_mp("fancy_ProDMP/AirHockey-3dof-hit-quadratic-penalty", seed=10, iterations=10, render=True)
 
 
 if __name__ == '__main__':
