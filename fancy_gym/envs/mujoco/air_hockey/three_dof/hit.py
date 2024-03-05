@@ -27,7 +27,9 @@ class AirHockeyHit(AirHockeySingle):
         self.penalty_type = penalty_type # "linear" or "quadratic"
 
     def setup(self, state=None):
-        self._setup_metrics()
+        self.episode_steps = 0
+        self.has_scored = False
+        self.is_fatal = False
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
 
@@ -48,7 +50,11 @@ class AirHockeyHit(AirHockeySingle):
 
         super(AirHockeyHit, self).setup(state)
 
-    def reward(self, state, action, next_state, absorbing):
+    def reward(self, obs, action, next_obs, absorbing):
+        rew = self.sparse_reward(obs, action, next_obs, absorbing)
+        return rew
+    
+    def dense_reward(self, state, action, next_state, absorbing):
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
@@ -74,6 +80,27 @@ class AirHockeyHit(AirHockeySingle):
         rew -= self.get_border_penalty(ee_pos)   
                 
         return rew
+    
+    def sparse_reward(self, state, action, next_state, absorbing):
+        rew = 0
+        puck_pos, puck_vel = self.get_puck(next_state)
+        ee_pos, _ = self.get_ee()
+        self.last_ee_pos = ee_pos
+
+        # Reward for higher puck velocity
+        if puck_vel[0] >= 0.25 or puck_pos[0] >= 0:
+            rew += 10 * np.linalg.norm(puck_vel[:2])
+        
+
+        # Reward for scoring
+        if self.has_scored:
+            rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
+
+        # high negative reward for violations of the constraints
+        # -2000 if violation in first step to -1000 if violation in last step
+        if self.is_fatal:
+            rew -= 2000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+        return rew
 
     def add_noise(self, obs):
         if not self.noise:
@@ -91,12 +118,7 @@ class AirHockeyHit(AirHockeySingle):
         obs, rew, done, info = super().step(action)
         obs = self.add_noise(obs)
 
-        info['fatal'] = 0
-        fatal_rew = self.check_fatal(obs)
-        if fatal_rew != 0:
-            info['fatal'] = 1
-            return obs, -2000, True, info
-
+        info['fatal'] = 1 if self.is_fatal else 1
         return obs, rew, done, info
     
     def check_fatal(self, obs):
@@ -129,11 +151,11 @@ class AirHockeyHit(AirHockeySingle):
 
         if np.any(np.abs(ee_pos[:2]) > boundary): # Penalty ignores inner 80%(y) and 90%(x) of the table
             if self.penalty_type == "linear":
-                penalty = (np.abs(ee_pos[:2])).sum() * 10
+                penalty = (np.abs(ee_pos[:2])).sum() * 100
                 return penalty
             
             elif self.penalty_type == "quadratic":
-                penalty = (np.abs(ee_pos[:2])).sum()**2 * 10
+                penalty = (np.abs(ee_pos[:2])).sum()**2 * 100
                 return penalty
         
         return penalty
@@ -150,11 +172,10 @@ class AirHockeyHit(AirHockeySingle):
 
         if self.episode_steps == self._mdp_info.horizon:
             return True
+        
+        if self.is_fatal:
+            return True
         return super(AirHockeyHit, self).is_absorbing(obs)
-    
-    def _setup_metrics(self):
-        self.episode_steps = 0
-        self.has_scored = False
 
     def _step_finalize(self):
         cur_obs = self._create_observation(self.obs_helper._build_obs(self._data))
@@ -164,6 +185,10 @@ class AirHockeyHit(AirHockeySingle):
             boundary = np.array([self.env_info['table']['length'], self.env_info['table']['width']]) / 2
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
 
+        if not self.is_fatal:
+            fatal_rew = self.check_fatal(cur_obs)
+            if fatal_rew != 0:
+                self.is_fatal = True
         self.episode_steps += 1
         return super()._step_finalize()
 
