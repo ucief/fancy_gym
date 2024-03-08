@@ -88,8 +88,8 @@ class AirHockeyHit(AirHockeySingle):
         self.last_ee_pos = ee_pos
 
         # Reward for higher puck velocity
-        if puck_vel[0] >= 0.25 or puck_pos[0] >= 0:
-            rew += 10 * np.linalg.norm(puck_vel[:2])
+        #if puck_vel[0] >= 0.25 or puck_pos[0] >= 0:
+        #    rew += 10 * np.linalg.norm(puck_vel[:2])
         
 
         # Reward for scoring
@@ -118,7 +118,7 @@ class AirHockeyHit(AirHockeySingle):
         obs, rew, done, info = super().step(action)
         obs = self.add_noise(obs)
 
-        info['fatal'] = 1 if self.is_fatal else 1
+        info['fatal'] = 1 if self.is_fatal else 0
         return obs, rew, done, info
     
     def check_fatal(self, obs):

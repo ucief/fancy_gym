@@ -9,7 +9,7 @@ class AirHockeyHit(AirHockeySingle):
         Class for the air hockey hitting task.
     """
 
-    def __init__(self, gamma=0.99, horizon=500, moving_init=True, viewer_params={}):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}):
         """
             Constructor
             Args:
@@ -26,6 +26,9 @@ class AirHockeyHit(AirHockeySingle):
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
 
     def setup(self, obs):
+        self.episode_steps = 0
+        self.has_scored = False
+        self.is_fatal = False
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
 
@@ -38,7 +41,7 @@ class AirHockeyHit(AirHockeySingle):
             puck_vel = np.zeros(3)
             puck_vel[0] = -np.cos(angle) * lin_vel
             puck_vel[1] = np.sin(angle) * lin_vel
-            puck_vel[2] = np.random.uniform(-2, 2)
+            puck_vel[2] = np.random.uniform(-2, 2, 1)
 
             self._write_data("puck_x_vel", puck_vel[0])
             self._write_data("puck_y_vel", puck_vel[1])
@@ -140,6 +143,9 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
             return True
 
         if self.episode_steps == self._mdp_info.horizon:
+            return True
+        
+        if self.is_fatal:
             return True
 
         return super().is_absorbing(obs)
