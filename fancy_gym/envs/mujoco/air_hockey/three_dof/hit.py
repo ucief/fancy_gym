@@ -119,6 +119,7 @@ class AirHockeyHit(AirHockeySingle):
         obs = self.add_noise(obs)
 
         info['fatal'] = 1 if self.is_fatal else 0
+        info['episode_steps'] = self.episode_steps
         return obs, rew, done, info
     
     def check_fatal(self, obs):
@@ -163,17 +164,21 @@ class AirHockeyHit(AirHockeySingle):
         
     def is_absorbing(self, obs):
         puck_pos, puck_vel = self.get_puck(obs)
+        is_absorbing = False
         # Stop if the puck bounces back on the opponents wall
         if puck_pos[0] > 0 and puck_vel[0] < 0:
-            return True
+            is_absorbing = True
             
         if self.has_scored:
-            return True
+            is_absorbing = True
 
-        if self.episode_steps == self._mdp_info.horizon:
-            return True
+        if self.episode_steps >= self._mdp_info.horizon:
+            is_absorbing = True
         
         if self.is_fatal:
+            is_absorbing = True
+        
+        if is_absorbing:
             return True
         return super(AirHockeyHit, self).is_absorbing(obs)
 
