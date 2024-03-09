@@ -99,6 +99,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
     def _setup_metrics(self):
         self.episode_steps = 0
         self.has_scored = False
+        self.is_fatal = False
 
     def _step_finalize(self):
         cur_obs = self._create_observation(self.obs_helper._build_obs(self._data))
@@ -107,12 +108,12 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         if not self.has_scored:
             boundary = np.array([self.env_info['table']['length'], self.env_info['table']['width']]) / 2
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
-
+            
         self.episode_steps += 1
         return super()._step_finalize()
 
     def reward(self, state, action, next_state, absorbing):
-        rew = 0.05 # give a small reward for every time step the ee stays inside the boundary
+        rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
         ee_vel = (ee_pos - self.last_ee_pos) / 0.02
