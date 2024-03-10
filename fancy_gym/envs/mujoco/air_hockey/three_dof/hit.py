@@ -51,7 +51,7 @@ class AirHockeyHit(AirHockeySingle):
         super(AirHockeyHit, self).setup(state)
 
     def reward(self, obs, action, next_obs, absorbing):
-        rew = self.sparse_reward(obs, action, next_obs, absorbing)
+        rew = self.dense_reward(obs, action, next_obs, absorbing)
         return rew
     
     def dense_reward(self, state, action, next_state, absorbing):
@@ -75,6 +75,11 @@ class AirHockeyHit(AirHockeySingle):
         # Reward for scoring
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
+
+        # high negative reward for violations of the constraints
+        # -2000 if violation in first step to -1000 if violation in last step
+        if self.is_fatal:
+            rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
 
         # Penalty for ee_pos close to walls of the table (y-direction)
         rew -= self.get_border_penalty(ee_pos)   
