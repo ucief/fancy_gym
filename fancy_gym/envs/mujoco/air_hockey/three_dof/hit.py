@@ -51,6 +51,7 @@ class AirHockeyHit(AirHockeySingle):
         super(AirHockeyHit, self).setup(state)
 
     def reward(self, obs, action, next_obs, absorbing):
+        # TODO rename sparse/dense rewards to _sparse_reward() and _dense_reward()
         rew = self.sparse_reward(obs, action, next_obs, absorbing)
         return rew
     
@@ -122,6 +123,7 @@ class AirHockeyHit(AirHockeySingle):
         return obs, rew, done, info
     
     def check_fatal(self, obs):
+        # TODO rewrite this to return bools (like in 7dof/hit.py)
         fatal_rew = 0
 
         q = obs[self.env_info["joint_pos_ids"]]
@@ -141,6 +143,7 @@ class AirHockeyHit(AirHockeySingle):
     
 
     def get_border_penalty(self, ee_pos):
+        #TODO rename to _get_border_penalty
         """
         Returns penalty (negative reward) for the end effector being close to the table walls.
 
