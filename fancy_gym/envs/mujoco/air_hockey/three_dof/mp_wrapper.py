@@ -22,13 +22,14 @@ class MPWrapper(RawInterfaceWrapper):
                 'disable_goal': False,
                 'relative_gaol': False,
                 'goal_offset': 1.0,
+                'action_dim': 3,
             },
             'phase_generator_kwargs': {
-                'tau': 10,
+                'tau': 3,
                 'alpha_phase': 3,
             },
             'black_box_kwargs': {
-                'duration': 10
+                'duration': 3
             }
         },
     }
@@ -37,16 +38,17 @@ class MPWrapper(RawInterfaceWrapper):
     def context_mask(self):
         return np.hstack([
             [True] * 2,  # puck XY position
+            [False] * 1,  # puck z position
             [True] * 2,  # puck XY velocity
-            [False] * 6,  # joint positions  (last joint disabled)
-            [False] * 6,  # joint velocities (last joint disabled)
-            [False] * 21,  # position of target
+            [False] * 1,  # puck z velocity
+            [False] * 3,  # joint positions
+            [False] * 3,  # joint velocitiy
         ])
 
     @property
     def current_pos(self) -> Union[float, int, np.ndarray, Tuple]:
-        return self.env.unwrapped.base_env.q_pos_prev[:6].copy()  # ignore the last joint
+        return self.env.unwrapped.base_env.q_pos_prev[:3].copy() 
 
     @property
     def current_vel(self) -> Union[float, int, np.ndarray, Tuple]:
-        return self.env.unwrapped.base_env.q_pos_prev[:6].copy() # ignore the last joint
+        return self.env.unwrapped.base_env.q_vel_prev[:3].copy()

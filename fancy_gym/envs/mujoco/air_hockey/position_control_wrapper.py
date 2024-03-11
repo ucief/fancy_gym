@@ -255,26 +255,79 @@ class PositionControlPlanar(PositionControl):
         i_gain = [0, 0, 0]
         super(PositionControlPlanar, self).__init__(p_gain=p_gain, d_gain=d_gain, i_gain=i_gain, *args, **kwargs)
 
-
+#### 3DOF ####
+# HIT
 class PlanarPositionHit(PositionControlPlanar, three_dof.AirHockeyHit):
     pass
 
+# sprase reward
+class PlanarPositionHit_sparse_rew_no_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
 
+class PlanarPositionHit_sparse_rew_discrete_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='discrete',reward_type="sparse", *args, **kwargs)
+
+# dense reward
+class PlanarPositionHit_dense_rew_no_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
+
+class PlanarPositionHit_dense_rew_discrete_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='discrete',reward_type="dense", *args, **kwargs)
+
+class PlanarPositionHit_dense_rew_linear_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
+
+class PlanarPositionHit_dense_rew_quadratic_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
+
+# DEFEND
 class PlanarPositionDefend(PositionControlPlanar, three_dof.AirHockeyDefend):
     pass
 
 
+##### 7DOF ####
 class IiwaPositionHit(PositionControlIIWA, seven_dof.AirHockeyHit):
     pass
 
-
+# HIT
 class IiwaPositionHitAirhocKIT2023(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
     pass
 
+# sprase reward
+class IiwaPositionHitAirhocKIT2023_sparse_rew_no_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
 
+class IiwaPositionHitAirhocKIT2023_sparse_rew_discrete_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='discrete',reward_type="sparse", *args, **kwargs)
+
+# dense reward
+class IiwaPositionHitAirhocKIT2023_dense_rew_no_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_dense_rew_discrete_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='discrete',reward_type="dense", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_dense_rew_linear_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_dense_rew_quadratic_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
+
+# DEFEND
 class IiwaPositionDefend(PositionControlIIWA, seven_dof.AirHockeyDefend):
     pass
-
 
 class IiwaPositionDefendAirhocKIT2023(PositionControlIIWA, seven_dof.AirHockeyDefendAirhocKIT2023):
     pass

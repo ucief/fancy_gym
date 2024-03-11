@@ -50,7 +50,7 @@ class RawInterfaceWrapper(gym.Wrapper):
         Returns: float
 
         """
-        return self.env.dt
+        return self.env.unwrapped.dt
 
     def preprocessing_and_validity_callback(self, action: np.ndarray, pos_traj: np.ndarray, vel_traj: np.ndarray,
                                             tau_bound: list = None, delay_bound: list = None ) \

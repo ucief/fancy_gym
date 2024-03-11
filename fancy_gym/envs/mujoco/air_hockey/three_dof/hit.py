@@ -7,11 +7,13 @@ class AirHockeyHit(AirHockeySingle):
     Class for the air hockey hitting task.
     """
 
-    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type = 'None', reward_type="dense"):
         """
         Constructor
         Args:
-            moving_init(bool, False): If true, initialize the puck with inital velocity.
+            moving_init(bool, False):       If true, initialize the puck with inital velocity.
+            penalty_type(String, 'None'):   Defines the type of penalty, if the ee is close to the constraints.
+                                            Possible is 'None', 'discrete' 'linear', 'quadratic'
         """
         super().__init__(gamma=gamma, horizon=horizon, viewer_params=viewer_params)
 
@@ -21,12 +23,17 @@ class AirHockeyHit(AirHockeySingle):
         self.hit_range = np.array([[-0.7, -0.2], [-hit_width, hit_width]])  # Table Frame
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
+        self.noise = True
+        self.penalty_type = penalty_type # "None", "discrete", "linear" or "quadratic"
+        self.discrete_penalty_types = ["discrete", "linear", "quadratic"] # All penalty types that recieve discrete penalty at fatal state
+        self.reward_type = reward_type # "dense" or "sparse" 
 
     def setup(self, state=None):
+        self.episode_steps = 0
+        self.has_scored = False
+        self.is_fatal = False
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
-
-        # self.init_state = np.array([-0.9273, 0.9273, np.pi / 2])
 
         self._write_data("puck_x_pos", puck_pos[0])
         self._write_data("puck_y_pos", puck_pos[1])
@@ -45,15 +52,174 @@ class AirHockeyHit(AirHockeySingle):
 
         super(AirHockeyHit, self).setup(state)
 
-    def reward(self, state, action, next_state, absorbing):
-        return 0
+    def reward(self, obs, action, next_obs, absorbing):
+        if self.reward_type == "dense":
+            rew = self._dense_reward(obs, action, next_obs, absorbing)
+        elif self.reward_type == "sparse":
+            rew = self._sparse_reward(obs, action, next_obs, absorbing)
+        else:
+            raise ValueError(f"{str(self.reward_type)} is no accepted reward type.")
+        return rew
+    
+    def _dense_reward(self, state, action, next_state, absorbing):
+        """
+        Recive reward and panalties throughout the execution and at the end of an episode.
+        """
+        rew = 0
+        puck_pos, puck_vel = self.get_puck(next_state)
+        ee_pos, _ = self.get_ee()
+        ee_vel = (ee_pos - self.last_ee_pos) / 0.02
+        self.last_ee_pos = ee_pos
 
+        # Reward for moving towards the puck
+        # TODO higher reward for hitting than only moving towards
+        if puck_vel[0] < 0.25 and puck_pos[0] < 0:
+            ee_puck_dir = (puck_pos - ee_pos)[:2]
+            ee_puck_dir = ee_puck_dir / np.linalg.norm(ee_puck_dir)
+            rew += 1 * max(0, np.dot(ee_puck_dir, ee_vel[:2]))
+        
+        # Reward for higher puck velocity
+        else:
+            rew += 10 * np.linalg.norm(puck_vel[:2])
+
+        # Reward for scoring
+        if self.has_scored:
+            rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
+
+        # Penalty
+        if self.penalty_type in self.discrete_penalty_types:
+            # high negative reward for violations of the constraints
+            # -2000 if violation in first step to -1000 if violation in last step
+            if self.is_fatal:
+                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+
+        if self.penalty_type in ["linear", "quadratic"]:
+            # Penalty for ee_pos close to walls of the table (y-direction)
+            rew -= self._get_border_penalty(ee_pos)   
+                
+        return rew
+    
+    def _sparse_reward(self, state, action, next_state, absorbing):
+        """
+        Recieve a reward and penalty only at the end of an episode. (minimum information)
+        * Scored?
+        * Crashed to wall?
+        """
+        rew = 0
+        puck_pos, puck_vel = self.get_puck(next_state)
+        ee_pos, _ = self.get_ee()
+        self.last_ee_pos = ee_pos
+
+        # Reward for scoring
+        if self.has_scored:
+            rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
+
+        # Penalty
+        if self.penalty_type in self.discrete_penalty_types:
+            # high negative reward for violations of the constraints
+            # -2000 if violation in first step to -1000 if violation in last step
+            if self.is_fatal:
+                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+
+        return rew
+    
+    def add_noise(self, obs):
+        if not self.noise:
+            return
+        obs[self.env_info["puck_pos_ids"]] += np.random.normal(0, 0.001, 3)
+        obs[self.env_info["puck_vel_ids"]] += np.random.normal(0, 0.1, 3)
+        return obs
+
+    def reset(self, *args):
+        obs = super().reset()
+        self.last_ee_pos, _ = self.get_ee()
+        return obs
+
+    def step(self, action):
+        obs, rew, done, info = super().step(action)
+        obs = self.add_noise(obs)
+
+        info['fatal'] = 1 if self.is_fatal else 0
+        info['episode_steps'] = self.episode_steps
+        return obs, rew, done, info
+    
+    def check_fatal(self, obs) -> bool:
+        # TODO write return statements after each violation. This prevents "exidental sum=0" after violations
+        fatal_rew = 0
+
+        q = obs[self.env_info["joint_pos_ids"]]
+        qd = obs[self.env_info["joint_vel_ids"]]
+        constraint_values_obs = self.env_info["constraints"].fun(q, qd)
+        
+        violation_j_pos_constr = constraint_values_obs["joint_pos_constr"][constraint_values_obs["joint_pos_constr"]>0]
+        fatal_rew += np.linalg.norm(violation_j_pos_constr)
+
+        violation_j_vel_constr = constraint_values_obs["joint_vel_constr"][constraint_values_obs["joint_vel_constr"]>0]
+        fatal_rew += np.linalg.norm(violation_j_vel_constr)
+
+        violation_ee_constr = constraint_values_obs["ee_constr"][constraint_values_obs["ee_constr"]>0]
+        fatal_rew += np.linalg.norm(violation_ee_constr)
+
+        return fatal_rew != 0
+    
+
+    def _get_border_penalty(self, ee_pos):
+        """
+        Returns penalty (negative reward) for the end effector being close to the table walls.
+        Based on self.penalty_type (linear or quadratic).
+        Note: The discrete value of -2000 is additionally
+        added to the reward afterwards.
+
+        Returns absolute value of the penalty! -> always positive -> must be subtracted!
+        """
+        penalty = 0
+        boundary = np.array([self.env_info['table']['length'] /2.2, self.env_info['table']['width'] /2.5])
+
+        if np.any(np.abs(ee_pos[:2]) > boundary): # Penalty ignores inner 80%(y) and 90%(x) of the table
+            if self.penalty_type == "linear":
+                penalty = (np.abs(ee_pos[:2])).sum() * 100
+                return penalty
+            
+            elif self.penalty_type == "quadratic":
+                penalty = (np.abs(ee_pos[:2])).sum()**2 * 100
+                return penalty
+        
+        return penalty
+
+        
     def is_absorbing(self, obs):
         puck_pos, puck_vel = self.get_puck(obs)
+        is_absorbing = False
         # Stop if the puck bounces back on the opponents wall
         if puck_pos[0] > 0 and puck_vel[0] < 0:
+            is_absorbing = True
+            
+        if self.has_scored:
+            is_absorbing = True
+
+        if self.episode_steps >= self._mdp_info.horizon:
+            is_absorbing = True
+        
+        if self.is_fatal:
+            is_absorbing = True
+        
+        if is_absorbing:
             return True
         return super(AirHockeyHit, self).is_absorbing(obs)
+
+    def _step_finalize(self):
+        cur_obs = self._create_observation(self.obs_helper._build_obs(self._data))
+        puck_pos, _ = self.get_puck(cur_obs)  # world frame [x, y, z] and [x', y', z']
+
+        if not self.has_scored:
+            boundary = np.array([self.env_info['table']['length'], self.env_info['table']['width']]) / 2
+            self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
+
+        if not self.is_fatal:
+            self.is_fatal = self.check_fatal(cur_obs)
+            
+        self.episode_steps += 1
+        return super()._step_finalize()
 
 
 if __name__ == '__main__':
@@ -66,7 +232,7 @@ if __name__ == '__main__':
     gamma = 1.
     steps = 0
     while True:
-        action = np.zeros(3)
+        action = 0.1*np.ones(3)
 
         observation, reward, done, info = env.step(action)
         env.render()

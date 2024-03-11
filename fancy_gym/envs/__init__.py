@@ -11,6 +11,8 @@ from .classic_control.hole_reacher.hole_reacher import HoleReacherEnv
 from .classic_control.hole_reacher import MPWrapper as MPWrapper_HoleReacher
 from .classic_control.viapoint_reacher.viapoint_reacher import ViaPointReacherEnv
 from .classic_control.viapoint_reacher import MPWrapper as MPWrapper_ViaPointReacher
+from .mujoco.air_hockey.seven_dof.mp_wrapper import MPWrapper as MPWrapper_Airhockey_seven_dof
+from .mujoco.air_hockey.three_dof.mp_wrapper import MPWrapper as MPWrapper_Airhockey_three_dof
 from .mujoco.reacher.reacher import ReacherEnv, MAX_EPISODE_STEPS_REACHER
 from .mujoco.reacher.mp_wrapper import MPWrapper as MPWrapper_Reacher
 from .mujoco.ant_jump.ant_jump import MAX_EPISODE_STEPS_ANTJUMP
@@ -290,13 +292,43 @@ register(
     }
 )
 
-# Air Hockey environments
-for env_mode in ["7dof-hit", "7dof-defend", "3dof-hit", "3dof-defend", "7dof-hit-airhockit2023", "7dof-defend-airhockit2023"]:
+# Air Hockey 7dof environments
+for env_mode in [   "7dof-hit",
+                    "7dof-defend",
+                    "7dof-hit-airhockit2023", 
+                    "7dof-hit-airhockit2023-sparse-rew-no-penalty",
+                    "7dof-hit-airhockit2023-sparse-rew-discrete-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-no-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-discrete-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-linear-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-quadratic-penalty",
+                    "7dof-defend-airhockit2023"]:
+
     register(
         id=f'fancy/AirHockey-{env_mode}-v0',
         entry_point='fancy_gym.envs.mujoco:AirHockeyEnv',
-        mp_wrapper=mujoco.air_hockey.MPWrapper,
-        max_episode_steps=500,
+        mp_wrapper= MPWrapper_Airhockey_seven_dof,
+        max_episode_steps=150,
+        add_mp_types=['ProDMP'],
+        kwargs={
+            'env_mode': env_mode
+        }
+    )
+
+# Air Hockey 3dof environments
+for env_mode in [   "3dof-hit",
+                    "3dof-hit-sparse-rew-no-penalty",
+                    "3dof-hit-sparse-rew-discrete-penalty",
+                    "3dof-hit-dense-rew-no-penalty",
+                    "3dof-hit-dense-rew-discrete-penalty",
+                    "3dof-hit-dense-rew-linear-penalty",
+                    "3dof-hit-dense-rew-quadratic-penalty",
+                    "3dof-defend"]:
+    register(
+        id=f'fancy/AirHockey-{env_mode}-v0',
+        entry_point='fancy_gym.envs.mujoco:AirHockeyEnv',
+        mp_wrapper= MPWrapper_Airhockey_three_dof,
+        max_episode_steps=150,
         add_mp_types=['ProDMP'],
         kwargs={
             'env_mode': env_mode

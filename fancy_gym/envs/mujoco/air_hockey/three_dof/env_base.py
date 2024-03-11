@@ -100,7 +100,7 @@ class AirHockeyBase(MuJoCo):
         self.env_info['robot'] = {
             "n_joints": 3,
             "ee_desired_height": 0.1,
-            "joint_vel_limit": np.array([[-np.pi / 2, -np.pi / 2, -np.pi * 2 / 3],
+            "joint_vel_limit": 4*np.array([[-np.pi / 2, -np.pi / 2, -np.pi * 2 / 3],
                                          [np.pi / 2, np.pi / 2, np.pi * 2 / 3]]),
 
             "joint_acc_limit": np.array([[-2 * np.pi, -2 * np.pi, -2 * 4 / 3 * np.pi],
