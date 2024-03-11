@@ -293,7 +293,17 @@ register(
 )
 
 # Air Hockey 7dof environments
-for env_mode in ["7dof-hit", "7dof-defend", "7dof-hit-airhockit2023", "7dof-defend-airhockit2023"]:
+for env_mode in [   "7dof-hit",
+                    "7dof-defend",
+                    "7dof-hit-airhockit2023", 
+                    "7dof-hit-airhockit2023-sparse-rew-no-penalty",
+                    "7dof-hit-airhockit2023-sparse-rew-discrete-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-no-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-discrete-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-linear-penalty",
+                    "7dof-hit-airhockit2023-dense-rew-quadratic-penalty",
+                    "7dof-defend-airhockit2023"]:
+
     register(
         id=f'fancy/AirHockey-{env_mode}-v0',
         entry_point='fancy_gym.envs.mujoco:AirHockeyEnv',
@@ -306,7 +316,14 @@ for env_mode in ["7dof-hit", "7dof-defend", "7dof-hit-airhockit2023", "7dof-defe
     )
 
 # Air Hockey 3dof environments
-for env_mode in ["3dof-hit", "3dof-defend"]:
+for env_mode in [   "3dof-hit",
+                    "3dof-hit-sparse-rew-no-penalty",
+                    "3dof-hit-sparse-rew-discrete-penalty",
+                    "3dof-hit-dense-rew-no-penalty",
+                    "3dof-hit-dense-rew-discrete-penalty",
+                    "3dof-hit-dense-rew-linear-penalty",
+                    "3dof-hit-dense-rew-quadratic-penalty",
+                    "3dof-defend"]:
     register(
         id=f'fancy/AirHockey-{env_mode}-v0',
         entry_point='fancy_gym.envs.mujoco:AirHockeyEnv',
