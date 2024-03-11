@@ -7,13 +7,13 @@ class AirHockeyHit(AirHockeySingle):
     Class for the air hockey hitting task.
     """
 
-    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type = 'None'):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type = 'None', reward_type="dense"):
         """
         Constructor
         Args:
             moving_init(bool, False):       If true, initialize the puck with inital velocity.
-            penalty_type(String, 'None'):   Defines the type of penalty, if the ee is close to the constraints. 
-                                            Possible is 'None', 'linear', 'quadratic'
+            penalty_type(String, 'None'):   Defines the type of penalty, if the ee is close to the constraints.
+                                            Possible is 'None', 'discrete' 'linear', 'quadratic'
         """
         super().__init__(gamma=gamma, horizon=horizon, viewer_params=viewer_params)
 
@@ -24,7 +24,9 @@ class AirHockeyHit(AirHockeySingle):
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
-        self.penalty_type = penalty_type # "linear" or "quadratic"
+        self.penalty_type = penalty_type # "None", "discrete", "linear" or "quadratic"
+        self.discrete_penalty_types = ["discrete", "linear", "quadratic"] # All penalty types that recieve discrete penalty at fatal state
+        self.reward_type = reward_type # "dense" or "sparse" 
 
     def setup(self, state=None):
         self.episode_steps = 0
@@ -51,10 +53,18 @@ class AirHockeyHit(AirHockeySingle):
         super(AirHockeyHit, self).setup(state)
 
     def reward(self, obs, action, next_obs, absorbing):
-        rew = self.dense_reward(obs, action, next_obs, absorbing)
+        if self.reward_type == "dense":
+            rew = self._dense_reward(obs, action, next_obs, absorbing)
+        elif self.reward_type == "sparse":
+            rew = self._sparse_reward(obs, action, next_obs, absorbing)
+        else:
+            raise ValueError(f"{str(self.reward_type)} is no accepted reward type.")
         return rew
     
-    def dense_reward(self, state, action, next_state, absorbing):
+    def _dense_reward(self, state, action, next_state, absorbing):
+        """
+        Recive reward and panalties throughout the execution and at the end of an episode.
+        """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
@@ -76,37 +86,43 @@ class AirHockeyHit(AirHockeySingle):
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
-        # high negative reward for violations of the constraints
-        # -2000 if violation in first step to -1000 if violation in last step
-        if self.is_fatal:
-            rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+        # Penalty
+        if self.penalty_type in self.discrete_penalty_types:
+            # high negative reward for violations of the constraints
+            # -2000 if violation in first step to -1000 if violation in last step
+            if self.is_fatal:
+                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
 
-        # Penalty for ee_pos close to walls of the table (y-direction)
-        rew -= self.get_border_penalty(ee_pos)   
+        if self.penalty_type in ["linear", "quadratic"]:
+            # Penalty for ee_pos close to walls of the table (y-direction)
+            rew -= self._get_border_penalty(ee_pos)   
                 
         return rew
     
-    def sparse_reward(self, state, action, next_state, absorbing):
+    def _sparse_reward(self, state, action, next_state, absorbing):
+        """
+        Recieve a reward and penalty only at the end of an episode. (minimum information)
+        * Scored?
+        * Crashed to wall?
+        """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
         self.last_ee_pos = ee_pos
 
-        # Reward for higher puck velocity
-        #if puck_vel[0] >= 0.25 or puck_pos[0] >= 0:
-        #    rew += 10 * np.linalg.norm(puck_vel[:2])
-        
-
         # Reward for scoring
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
-        # high negative reward for violations of the constraints
-        # -2000 if violation in first step to -1000 if violation in last step
-        if self.is_fatal:
-            rew -= 2000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
-        return rew
+        # Penalty
+        if self.penalty_type in self.discrete_penalty_types:
+            # high negative reward for violations of the constraints
+            # -2000 if violation in first step to -1000 if violation in last step
+            if self.is_fatal:
+                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
 
+        return rew
+    
     def add_noise(self, obs):
         if not self.noise:
             return
@@ -127,7 +143,8 @@ class AirHockeyHit(AirHockeySingle):
         info['episode_steps'] = self.episode_steps
         return obs, rew, done, info
     
-    def check_fatal(self, obs):
+    def check_fatal(self, obs) -> bool:
+        # TODO write return statements after each violation. This prevents "exidental sum=0" after violations
         fatal_rew = 0
 
         q = obs[self.env_info["joint_pos_ids"]]
@@ -143,12 +160,15 @@ class AirHockeyHit(AirHockeySingle):
         violation_ee_constr = constraint_values_obs["ee_constr"][constraint_values_obs["ee_constr"]>0]
         fatal_rew += np.linalg.norm(violation_ee_constr)
 
-        return -fatal_rew
+        return fatal_rew != 0
     
 
-    def get_border_penalty(self, ee_pos):
+    def _get_border_penalty(self, ee_pos):
         """
         Returns penalty (negative reward) for the end effector being close to the table walls.
+        Based on self.penalty_type (linear or quadratic).
+        Note: The discrete value of -2000 is additionally
+        added to the reward afterwards.
 
         Returns absolute value of the penalty! -> always positive -> must be subtracted!
         """
@@ -196,9 +216,8 @@ class AirHockeyHit(AirHockeySingle):
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
 
         if not self.is_fatal:
-            fatal_rew = self.check_fatal(cur_obs)
-            if fatal_rew != 0:
-                self.is_fatal = True
+            self.is_fatal = self.check_fatal(cur_obs)
+            
         self.episode_steps += 1
         return super()._step_finalize()
 
