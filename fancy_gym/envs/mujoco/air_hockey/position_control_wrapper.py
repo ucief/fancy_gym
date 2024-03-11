@@ -260,27 +260,29 @@ class PositionControlPlanar(PositionControl):
 class PlanarPositionHit(PositionControlPlanar, three_dof.AirHockeyHit):
     pass
 
-class PlanarPositionHit_lin_pen_sparse_rew(PositionControlPlanar, three_dof.AirHockeyHit):
-    def __init__(self, *args, **kwargs):
-        PositionControlPlanar.__init__(self, penalty_type='linear',reward_type="sparse", *args, **kwargs)
-
-class PlanarPositionHit_lin_pen_dense_rew(PositionControlPlanar, three_dof.AirHockeyHit):
-    def __init__(self, *args, **kwargs):
-        PositionControlPlanar.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
-
-class PlanarPositionHit_no_pen_sparse_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+# sprase reward
+class PlanarPositionHit_sparse_rew_no_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
     def __init__(self, *args, **kwargs):
         PositionControlPlanar.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
 
-class PlanarPositionHit_no_pen_dense_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+class PlanarPositionHit_sparse_rew_discrete_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='discrete',reward_type="sparse", *args, **kwargs)
+
+# dense reward
+class PlanarPositionHit_dense_rew_no_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
     def __init__(self, *args, **kwargs):
         PositionControlPlanar.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
 
-class PlanarPositionHit_quad_pen_sparse_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+class PlanarPositionHit_dense_rew_discrete_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
     def __init__(self, *args, **kwargs):
-        PositionControlPlanar.__init__(self, penalty_type='quadratic',reward_type="sparse", *args, **kwargs)
+        PositionControlPlanar.__init__(self, penalty_type='discrete',reward_type="dense", *args, **kwargs)
 
-class PlanarPositionHit_quad_pen_dense_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+class PlanarPositionHit_dense_rew_linear_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
+
+class PlanarPositionHit_dense_rew_quadratic_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
     def __init__(self, *args, **kwargs):
         PositionControlPlanar.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
 
@@ -297,29 +299,31 @@ class IiwaPositionHit(PositionControlIIWA, seven_dof.AirHockeyHit):
 class IiwaPositionHitAirhocKIT2023(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
     pass
 
-class IiwaPositionHitAirhocKIT2023_lin_pen_sparse_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+# sprase reward
+class IiwaPositionHitAirhocKIT2023_sparse_rew_no_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
     def __init__(self, *args, **kwargs):
-        PositionControlIIWA.__init__(self, penalty_type='linear',reward_type="sparse", *args, **kwargs)
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
 
-class IiwaPositionHitAirhocKIT2023_lin_pen_dense_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+class IiwaPositionHitAirhocKIT2023_sparse_rew_discrete_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
     def __init__(self, *args, **kwargs):
-        PositionControlIIWA.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='discrete',reward_type="sparse", *args, **kwargs)
 
-class IiwaPositionHitAirhocKIT2023_no_pen_sparse_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+# dense reward
+class IiwaPositionHitAirhocKIT2023_dense_rew_no_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
     def __init__(self, *args, **kwargs):
-        PositionControlIIWA.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
 
-class IiwaPositionHitAirhocKIT2023_no_pen_dense_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+class IiwaPositionHitAirhocKIT2023_dense_rew_discrete_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
     def __init__(self, *args, **kwargs):
-        PositionControlIIWA.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='discrete',reward_type="dense", *args, **kwargs)
 
-class IiwaPositionHitAirhocKIT2023_quad_pen_sparse_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+class IiwaPositionHitAirhocKIT2023_dense_rew_linear_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
     def __init__(self, *args, **kwargs):
-        PositionControlIIWA.__init__(self, penalty_type='quadratic',reward_type="sparse", *args, **kwargs)
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
 
-class IiwaPositionHitAirhocKIT2023_quad_pen_dense_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+class IiwaPositionHitAirhocKIT2023_dense_rew_quadratic_penalty(IiwaPositionHitAirhocKIT2023, seven_dof.AirHockeyHitAirhocKIT2023):
     def __init__(self, *args, **kwargs):
-        PositionControlIIWA.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
+        IiwaPositionHitAirhocKIT2023.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
 
 # DEFEND
 class IiwaPositionDefend(PositionControlIIWA, seven_dof.AirHockeyDefend):

@@ -60,6 +60,10 @@ class AirHockeyHit(AirHockeySingle):
 
 
 class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
+    """
+    penalty_type(String, 'None'):   Defines the type of penalty, if the ee is close to the constraints.
+                                            Possible is 'None', 'discrete' 'linear', 'quadratic'
+    """
     def __init__(self, gamma=0.99, horizon=500, moving_init=True, viewer_params={}, penalty_type="None", reward_type="dense", **kwargs):
         super().__init__(gamma=gamma, horizon=horizon, viewer_params=viewer_params, **kwargs)
 
@@ -71,8 +75,9 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self._setup_metrics()
         self.noise = True
-        self.penalty_type = penalty_type
-        self.reward_type = reward_type
+        self.penalty_type = penalty_type # "None", "discrete", "linear" or "quadratic"
+        self.discrete_penalty_types = ["discrete", "linear", "quadratic"] # All penalty types that recieve discrete penalty at fatal state
+        self.reward_type = reward_type # "dense" or "sparse" 
 
     def reset(self, *args):
         obs = super().reset()
@@ -163,6 +168,9 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         return rew
 
     def _dense_reward(self, state, action, next_state, absorbing):
+        """
+        Recive reward and panalties throughout the execution and at the end of an episode.
+        """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
@@ -184,37 +192,49 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
-        # Penalty for ee_pos close to walls of the table (y-direction)
-        rew -= self._get_border_penalty(ee_pos)   
+        # Penalty
+        if self.penalty_type in self.discrete_penalty_types:
+            # high negative reward for violations of the constraints
+            # -2000 if violation in first step to -1000 if violation in last step
+            if self.is_fatal:
+                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
 
-        if self.is_fatal:
-            rew -= 2000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+        if self.penalty_type in ["linear", "quadratic"]:
+            # Penalty for ee_pos close to walls of the table (y-direction)
+            rew -= self._get_border_penalty(ee_pos)   
                 
         return rew
     
     def _sparse_reward(self, state, action, next_state, absorbing):
+        """
+        Recieve a reward and penalty only at the end of an episode. (minimum information)
+        * Scored?
+        * Crashed to wall?
+        """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
         self.last_ee_pos = ee_pos
 
-        # Reward for higher puck velocity
-        #if puck_vel[0] >= 0.25 or puck_pos[0] >= 0:
-        #    rew += 10 * np.linalg.norm(puck_vel[:2])
-        
         # Reward for scoring
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
-        # high negative reward for violations of the constraints
-        # -2000 if violation in first step to -1000 if violation in last step
-        if self.is_fatal:
-            rew -= 2000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+        # Penalty
+        if self.penalty_type in self.discrete_penalty_types:
+            # high negative reward for violations of the constraints
+            # -2000 if violation in first step to -1000 if violation in last step
+            if self.is_fatal:
+                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+
         return rew
     
     def _get_border_penalty(self, ee_pos):
         """
         Returns penalty (negative reward) for the end effector being close to the table walls.
+        Based on self.penalty_type (linear or quadratic).
+        Note: The discrete value of -2000 is additionally
+        added to the reward afterwards.
 
         Returns absolute value of the penalty! -> always positive -> must be subtracted!
         """
