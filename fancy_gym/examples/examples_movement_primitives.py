@@ -41,15 +41,23 @@ def example_mp(env_name="fancy_ProMP/HoleReacher-v0", seed=1, iterations=1, rend
             if fatal:
                 print('Fatal')
             else:
-                print('Not Fatal')
+                #print('Not Fatal')
+                pass
         except:
-            pass
+            fatal = info['fatal']
+            if fatal:
+                print('Fatal')
+            else:
+                #print('Not Fatal')
+                pass
         try:
             success = any(info['success'])
             if success:
                 print('Success')
         except:
-            pass
+            success = info['success']
+            if success:
+                print('Success')
         # Aggregated returns
         returns += reward
 
@@ -287,8 +295,9 @@ def main():
     # # Custom MP
     # example_fully_custom_mp(seed=10, iterations=1, render=render)
     # example_fully_custom_mp_alternative(seed=10, iterations=1, render=render)
-    example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
+    #example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
     #example_mp("fancy/AirHockey-7dof-hit-v0", seed=10, iterations=20, render=render)
+    example_mp("fancy/AirHockey-3dof-hit", seed=10, iterations=1000, render=True)
     #example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=10, render=True)
     #example_mp("fancy_ProDMP/AirHockey-3dof-hit-linear-penalty", seed=10, iterations=10, render=True)
     #example_mp("fancy_ProDMP/AirHockey-3dof-hit-quadratic-penalty", seed=10, iterations=10, render=True)

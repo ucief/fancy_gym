@@ -82,6 +82,11 @@ class AirHockeyHit(AirHockeySingle):
         if self.has_scored:
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
+        # high negative reward for violations of the constraints
+        # -2000 if violation in first step to -1000 if violation in last step
+        if self.is_fatal:
+            rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+
         # Penalty for ee_pos close to walls of the table (y-direction)
         rew -= self._get_border_penalty(ee_pos)   
                 
@@ -125,6 +130,7 @@ class AirHockeyHit(AirHockeySingle):
         obs = self.add_noise(obs)
 
         info['fatal'] = 1 if self.is_fatal else 0
+        info['episode_steps'] = self.episode_steps
         return obs, rew, done, info
     
     def check_fatal(self, obs) -> bool:
@@ -170,17 +176,21 @@ class AirHockeyHit(AirHockeySingle):
         
     def is_absorbing(self, obs):
         puck_pos, puck_vel = self.get_puck(obs)
+        is_absorbing = False
         # Stop if the puck bounces back on the opponents wall
         if puck_pos[0] > 0 and puck_vel[0] < 0:
-            return True
+            is_absorbing = True
             
         if self.has_scored:
-            return True
+            is_absorbing = True
 
-        if self.episode_steps == self._mdp_info.horizon:
-            return True
+        if self.episode_steps >= self._mdp_info.horizon:
+            is_absorbing = True
         
         if self.is_fatal:
+            is_absorbing = True
+        
+        if is_absorbing:
             return True
         return super(AirHockeyHit, self).is_absorbing(obs)
 
