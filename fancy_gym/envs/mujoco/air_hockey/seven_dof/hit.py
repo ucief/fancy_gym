@@ -143,6 +143,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
     def _setup_metrics(self):
         self.episode_steps = 0
         self.has_scored = False
+        self.is_fatal = False
 
     def _step_finalize(self):
         cur_obs = self._create_observation(self.obs_helper._build_obs(self._data))
@@ -154,7 +155,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
 
         if not self.is_fatal:
             self.is_fatal = self.check_fatal(cur_obs)
-
+      
         self.episode_steps += 1
         return super()._step_finalize()
     

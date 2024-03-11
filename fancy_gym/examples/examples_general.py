@@ -26,16 +26,20 @@ def example_general(env_id="Pendulum-v1", seed=1, iterations=1000, render=True):
     obs = env.reset(seed=seed)
     print("Observation shape: ", env.observation_space.shape)
     print("Action shape: ", env.action_space.shape)
-
+    action = [0]*6
     # number of environment steps
     for i in range(iterations):
-        obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
+        #action = env.action_space.sample()
+        #action[:] = i/iterations
+        print(action)
+        obs, reward, terminated, truncated, info = env.step(action)
         rewards += reward
 
         if render:
             env.render()
 
         if terminated or truncated:
+            action = np.add(action,[0.1]*6)
             print(rewards)
             rewards = 0
             obs = env.reset()
@@ -96,7 +100,7 @@ if __name__ == '__main__':
     # example_general("fancy/Reacher5d-v0", seed=10, iterations=200, render=render)
 
     # # OpenAI Mujoco task
-    example_general('fancy/AirHockey-3dof-hit-v0', seed=10, render=render)
+    example_general('fancy/AirHockey-7dof-hit-airhockit2023', seed=10, render=render)
     print('FINISHED')
     # Vectorized multiprocessing environments
     # example_async(env_id="HoleReacher-v0", n_cpu=2, seed=int('533D', 16), n_samples=2 * 200)

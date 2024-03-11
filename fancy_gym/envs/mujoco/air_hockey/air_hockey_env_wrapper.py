@@ -11,7 +11,7 @@ from mushroom_rl.core import Environment
 class AirHockeyEnv(Environment):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
 
-    def __init__(self, env_mode=None, interpolation_order=3, render_mode=None, width=1920, height=1080, **kwargs):
+    def __init__(self, env_mode=None, interpolation_order=2, render_mode=None, width=1920, height=1080, **kwargs):
         """
         Environment Constructor
 

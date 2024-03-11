@@ -137,7 +137,12 @@ class AirHockeyHit(AirHockeySingle):
 
     def step(self, action):
         obs, rew, done, info = super().step(action)
-        obs = self.add_noise(obs)
+        self.add_noise(obs)
+
+        # penalty for ee leaving the boundarys
+        fatal_rew = self.check_fatal(obs)
+        if fatal_rew != 0:
+            return obs, fatal_rew*100, True, info
 
         info['fatal'] = 1 if self.is_fatal else 0
         info['episode_steps'] = self.episode_steps
