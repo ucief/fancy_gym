@@ -30,12 +30,27 @@ class AirHockeyEnv(Environment):
             "7dof-hit": position.IiwaPositionHit,
             "7dof-defend": position.IiwaPositionDefend,
 
+
             "3dof-hit": position.PlanarPositionHit,
-            "3dof-hit-linear-penalty": position.PlanarPositionHit_linear_penalty,
-            "3dof-hit-quadratic-penalty": position.PlanarPositionHit_quadratic_penalty,
+            "3dof-hit-lin-pen-sparse-rew":position.PlanarPositionHit_lin_pen_sparse_rew,
+            "3dof-hit-lin-pen-dense-rew":position.PlanarPositionHit_lin_pen_dense_rew,
+            "3dof-hit-no-pen-sparse-rew":position.PlanarPositionHit_no_pen_sparse_rew,
+            "3dof-hit-no-pen-dense-rew":position.PlanarPositionHit_no_pen_dense_rew,
+            "3dof-hit-quad-pen-sparse-rew":position.PlanarPositionHit_quad_pen_sparse_rew,
+            "3dof-hit-quad-pen-dense-rew":position.PlanarPositionHit_quad_pen_dense_rew,
+
             "3dof-defend": position.PlanarPositionDefend,
 
+
             "7dof-hit-airhockit2023": position.IiwaPositionHitAirhocKIT2023,
+
+            "7dof-hit-airhockit2023-lin-pen-sparse-rew":position.PlanarPositionHit_lin_pen_sparse_rew,
+            "7dof-hit-airhockit2023-lin-pen-dense-rew":position.PlanarPositionHit_lin_pen_dense_rew,
+            "7dof-hit-airhockit2023-no-pen-sparse-rew":position.PlanarPositionHit_no_pen_sparse_rew,
+            "7dof-hit-airhockit2023-no-pen-dense-rew":position.PlanarPositionHit_no_pen_dense_rew,
+            "7dof-hit-airhockit2023-quad-pen-sparse-rew":position.PlanarPositionHit_quad_pen_sparse_rew,
+            "7dof-hit-airhockit2023-quad-pen-dense-rew":position.PlanarPositionHit_quad_pen_dense_rew,
+
             "7dof-defend-airhockit2023": position.IiwaPositionDefendAirhocKIT2023,
         }
 

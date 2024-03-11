@@ -255,35 +255,75 @@ class PositionControlPlanar(PositionControl):
         i_gain = [0, 0, 0]
         super(PositionControlPlanar, self).__init__(p_gain=p_gain, d_gain=d_gain, i_gain=i_gain, *args, **kwargs)
 
-
+#### 3DOF ####
+# HIT
 class PlanarPositionHit(PositionControlPlanar, three_dof.AirHockeyHit):
     pass
 
-class PlanarPositionHit_linear_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+class PlanarPositionHit_lin_pen_sparse_rew(PositionControlPlanar, three_dof.AirHockeyHit):
     def __init__(self, *args, **kwargs):
-        PositionControlPlanar.__init__(self, penalty_type='linear', *args, **kwargs)
+        PositionControlPlanar.__init__(self, penalty_type='linear',reward_type="sparse", *args, **kwargs)
 
-class PlanarPositionHit_quadratic_penalty(PositionControlPlanar, three_dof.AirHockeyHit):
+class PlanarPositionHit_lin_pen_dense_rew(PositionControlPlanar, three_dof.AirHockeyHit):
     def __init__(self, *args, **kwargs):
-        PositionControlPlanar.__init__(self, penalty_type='quadratic', *args, **kwargs)
+        PositionControlPlanar.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
 
+class PlanarPositionHit_no_pen_sparse_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
 
+class PlanarPositionHit_no_pen_dense_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
 
+class PlanarPositionHit_quad_pen_sparse_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='quadratic',reward_type="sparse", *args, **kwargs)
+
+class PlanarPositionHit_quad_pen_dense_rew(PositionControlPlanar, three_dof.AirHockeyHit):
+    def __init__(self, *args, **kwargs):
+        PositionControlPlanar.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
+
+# DEFEND
 class PlanarPositionDefend(PositionControlPlanar, three_dof.AirHockeyDefend):
     pass
 
 
+##### 7DOF ####
 class IiwaPositionHit(PositionControlIIWA, seven_dof.AirHockeyHit):
     pass
 
-
+# HIT
 class IiwaPositionHitAirhocKIT2023(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
     pass
 
+class IiwaPositionHitAirhocKIT2023_lin_pen_sparse_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        PositionControlIIWA.__init__(self, penalty_type='linear',reward_type="sparse", *args, **kwargs)
 
+class IiwaPositionHitAirhocKIT2023_lin_pen_dense_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        PositionControlIIWA.__init__(self, penalty_type='linear',reward_type="dense", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_no_pen_sparse_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        PositionControlIIWA.__init__(self, penalty_type='None',reward_type="sparse", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_no_pen_dense_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        PositionControlIIWA.__init__(self, penalty_type='None',reward_type="dense", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_quad_pen_sparse_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        PositionControlIIWA.__init__(self, penalty_type='quadratic',reward_type="sparse", *args, **kwargs)
+
+class IiwaPositionHitAirhocKIT2023_quad_pen_dense_rew(PositionControlIIWA, seven_dof.AirHockeyHitAirhocKIT2023):
+    def __init__(self, *args, **kwargs):
+        PositionControlIIWA.__init__(self, penalty_type='quadratic',reward_type="dense", *args, **kwargs)
+
+# DEFEND
 class IiwaPositionDefend(PositionControlIIWA, seven_dof.AirHockeyDefend):
     pass
-
 
 class IiwaPositionDefendAirhocKIT2023(PositionControlIIWA, seven_dof.AirHockeyDefendAirhocKIT2023):
     pass

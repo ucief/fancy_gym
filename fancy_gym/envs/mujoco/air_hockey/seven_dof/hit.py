@@ -9,7 +9,7 @@ class AirHockeyHit(AirHockeySingle):
         Class for the air hockey hitting task.
     """
 
-    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type="None"):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}):
         """
             Constructor
             Args:
@@ -24,13 +24,10 @@ class AirHockeyHit(AirHockeySingle):
         self.hit_range = np.array([[-0.7, -0.2], [-hit_width, hit_width]])  # Table Frame
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
-        self.noise = True
-        self.penalty_type = penalty_type
 
     def setup(self, obs):
         self.episode_steps = 0
         self.has_scored = False
-        self.is_fatal = False
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
 
@@ -63,7 +60,7 @@ class AirHockeyHit(AirHockeySingle):
 
 
 class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
-    def __init__(self, gamma=0.99, horizon=500, moving_init=True, viewer_params={}, **kwargs):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=True, viewer_params={}, penalty_type="None", reward_type="dense", **kwargs):
         super().__init__(gamma=gamma, horizon=horizon, viewer_params=viewer_params, **kwargs)
 
         self.moving_init = moving_init
@@ -73,6 +70,9 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         self.init_velocity_range = (0, 0.5)  # Table Frame
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self._setup_metrics()
+        self.noise = True
+        self.penalty_type = penalty_type
+        self.reward_type = reward_type
 
     def reset(self, *args):
         obs = super().reset()
@@ -119,6 +119,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
 
         self._write_data("puck_x_pos", puck_pos[0])
         self._write_data("puck_y_pos", puck_pos[1])
+        self.is_fatal = False
 
         if self.moving_init:
             lin_vel = np.random.uniform(self.init_velocity_range[0], self.init_velocity_range[1])
@@ -153,7 +154,12 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         return super()._step_finalize()
     
     def reward(self, obs, action, next_obs, absorbing):
-        rew = self._dense_reward(obs, action, next_obs, absorbing)
+        if self.reward_type == "dense":
+            rew = self._dense_reward(obs, action, next_obs, absorbing)
+        elif self.reward_type == "sparse":
+            rew = self._sparse_reward(obs, action, next_obs, absorbing)
+        else:
+            raise ValueError(f"{str(self.reward_type)} is no accepted reward type.")
         return rew
 
     def _dense_reward(self, state, action, next_state, absorbing):

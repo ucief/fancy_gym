@@ -7,7 +7,7 @@ class AirHockeyHit(AirHockeySingle):
     Class for the air hockey hitting task.
     """
 
-    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type = 'None'):
+    def __init__(self, gamma=0.99, horizon=500, moving_init=False, viewer_params={}, penalty_type = 'None', reward_type="dense"):
         """
         Constructor
         Args:
@@ -25,6 +25,7 @@ class AirHockeyHit(AirHockeySingle):
         self.init_ee_range = np.array([[0.60, 1.25], [-0.4, 0.4]])  # Robot Frame
         self.noise = True
         self.penalty_type = penalty_type # "linear" or "quadratic"
+        self.reward_type = reward_type # "dense" or "sparse"
 
     def setup(self, state=None):
         self.episode_steps = 0
@@ -51,11 +52,15 @@ class AirHockeyHit(AirHockeySingle):
         super(AirHockeyHit, self).setup(state)
 
     def reward(self, obs, action, next_obs, absorbing):
-        # TODO rename sparse/dense rewards to _sparse_reward() and _dense_reward()
-        rew = self.sparse_reward(obs, action, next_obs, absorbing)
+        if self.reward_type == "dense":
+            rew = self._dense_reward(obs, action, next_obs, absorbing)
+        elif self.reward_type == "sparse":
+            rew = self._sparse_reward(obs, action, next_obs, absorbing)
+        else:
+            raise ValueError(f"{str(self.reward_type)} is no accepted reward type.")
         return rew
     
-    def dense_reward(self, state, action, next_state, absorbing):
+    def _dense_reward(self, state, action, next_state, absorbing):
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
@@ -78,11 +83,11 @@ class AirHockeyHit(AirHockeySingle):
             rew += 2000 + 5000 * np.linalg.norm(puck_vel[:2])
 
         # Penalty for ee_pos close to walls of the table (y-direction)
-        rew -= self.get_border_penalty(ee_pos)   
+        rew -= self._get_border_penalty(ee_pos)   
                 
         return rew
     
-    def sparse_reward(self, state, action, next_state, absorbing):
+    def _sparse_reward(self, state, action, next_state, absorbing):
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
         ee_pos, _ = self.get_ee()
@@ -122,8 +127,8 @@ class AirHockeyHit(AirHockeySingle):
         info['fatal'] = 1 if self.is_fatal else 0
         return obs, rew, done, info
     
-    def check_fatal(self, obs):
-        # TODO rewrite this to return bools (like in 7dof/hit.py)
+    def check_fatal(self, obs) -> bool:
+        # TODO write return statements after each violation. This prevents "exidental sum=0" after violations
         fatal_rew = 0
 
         q = obs[self.env_info["joint_pos_ids"]]
@@ -139,11 +144,10 @@ class AirHockeyHit(AirHockeySingle):
         violation_ee_constr = constraint_values_obs["ee_constr"][constraint_values_obs["ee_constr"]>0]
         fatal_rew += np.linalg.norm(violation_ee_constr)
 
-        return -fatal_rew
+        return fatal_rew != 0
     
 
-    def get_border_penalty(self, ee_pos):
-        #TODO rename to _get_border_penalty
+    def _get_border_penalty(self, ee_pos):
         """
         Returns penalty (negative reward) for the end effector being close to the table walls.
 
@@ -189,9 +193,8 @@ class AirHockeyHit(AirHockeySingle):
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
 
         if not self.is_fatal:
-            fatal_rew = self.check_fatal(cur_obs)
-            if fatal_rew != 0:
-                self.is_fatal = True
+            self.is_fatal = self.check_fatal(cur_obs)
+            
         self.episode_steps += 1
         return super()._step_finalize()
 
