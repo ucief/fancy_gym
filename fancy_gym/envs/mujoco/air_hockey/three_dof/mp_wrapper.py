@@ -38,9 +38,9 @@ class MPWrapper(RawInterfaceWrapper):
     def context_mask(self):
         return np.hstack([
             [True] * 2,  # puck XY position
-            [False] * 1,  # puck z position
+            [False] * 1,  # puck yaw position
             [True] * 2,  # puck XY velocity
-            [False] * 1,  # puck z velocity
+            [False] * 1,  # puck yaw velocity
             [False] * 3,  # joint positions
             [False] * 3,  # joint velocitiy
         ])

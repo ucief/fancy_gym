@@ -20,7 +20,7 @@ def example_mp(env_name="fancy_ProMP/HoleReacher-v0", seed=1, iterations=1, rend
 
     returns = 0
     # env.render(mode=None)
-    obs = env.reset(seed=seed)
+    obs = env.reset(seed=seed)[0]
 
     # number of samples/full trajectories (multiple environment steps)
     for i in range(iterations):
@@ -31,25 +31,27 @@ def example_mp(env_name="fancy_ProMP/HoleReacher-v0", seed=1, iterations=1, rend
         # Now the action space is not the raw action but the parametrization of the trajectory generator,
         # such as a ProMP
         ac = env.action_space.sample()
-        #print(ac)
+        print(ac)
         # This executes a full trajectory and gives back the context (obs) of the last step in the trajectory, or the
         # full observation space of the last step, if replanning/sub-trajectory learning is used. The 'reward' is equal
         # to the return of a trajectory. Default is the sum over the step-wise rewards.
         obs, reward, terminated, truncated, info = env.step(ac)
+        #try:
+        #    fatal = any(info['fatal'])
+        #    if fatal:
+        #        print('Fatal')
+        #    else:
+        #        #print('Not Fatal')
+        #        pass
+        #except:
+        #    pass
         try:
-            fatal = any(info['fatal'])
-            if fatal:
-                print('Fatal')
-            else:
-                #print('Not Fatal')
-                pass
-        except:
             fatal = info['fatal']
             if fatal:
                 print('Fatal')
-            else:
-                #print('Not Fatal')
-                pass
+        except:
+            pass
+
         try:
             success = any(info['success'])
             if success:
@@ -60,9 +62,11 @@ def example_mp(env_name="fancy_ProMP/HoleReacher-v0", seed=1, iterations=1, rend
                 print('Success')
         # Aggregated returns
         returns += reward
-        print(info['trajectory_length'])
+        #print(info['trajectory_length'])
         if terminated or truncated:
-            #print(reward)
+            print('reset')
+            print(reward)
+            print(info['episode_steps'])
             obs = env.reset()
     env.close()
 
@@ -296,10 +300,11 @@ def main():
     # example_fully_custom_mp(seed=10, iterations=1, render=render)
     # example_fully_custom_mp_alternative(seed=10, iterations=1, render=render)
     
-    #example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023", seed=10, iterations=20, render=render)
+    example_mp("fancy_ProDMP/AirHockey-7dof-hit-airhockit2023-dense-rew-discrete-penalty-v0", seed=10, iterations=200, render=False)
     #example_mp("fancy/AirHockey-7dof-hit-v0", seed=10, iterations=20, render=render)
-    example_mp("fancy/AirHockey-3dof-hit", seed=10, iterations=1000, render=True)
-    #example_mp("fancy_ProDMP/AirHockey-3dof-hit", seed=10, iterations=10, render=True)
+    #example_mp("fancy/AirHockey-3dof-hit", seed=10, iterations=1000, render=True)
+    #example_mp("fancy_ProDMP/AirHockey-3dof-hit-dense-rew-discrete-penalty-v0", seed=10, iterations=10, render=True)
+    #example_mp("fancy/AirHockey-3dof-hit-dense-rew-discrete-penalty-v0", seed=10, iterations=1000, render=True)
     #example_mp("fancy_ProDMP/AirHockey-3dof-hit-linear-penalty", seed=10, iterations=10, render=True)
     #example_mp("fancy_ProDMP/AirHockey-3dof-hit-quadratic-penalty", seed=10, iterations=10, render=True)
 

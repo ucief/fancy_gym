@@ -81,8 +81,6 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
 
     def reset(self, *args):
         obs = super().reset()
-        self.last_ee_pos = self.last_planned_world_pos.copy()
-        self.last_ee_pos[0] -= 1.51
         return obs
 
     def add_noise(self, obs):
@@ -97,9 +95,10 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         obs = self.add_noise(obs)
 
         info['fatal'] = 1 if self.is_fatal else 0
+        info['episode_steps'] = self.episode_steps
         return obs, rew, done, info
 
-    def check_fatal(self, obs) -> bool:
+    def _check_fatal(self, obs) -> bool:
         # TODO write return statements after each violation. This prevents "exidental sum=0" after violations
         fatal_rew = 0
 
@@ -154,7 +153,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
 
         if not self.is_fatal:
-            self.is_fatal = self.check_fatal(cur_obs)
+            self.is_fatal = self._check_fatal(cur_obs)
       
         self.episode_steps += 1
         return super()._step_finalize()
@@ -174,9 +173,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
-        ee_pos, _ = self.get_ee()
-        ee_vel = (ee_pos - self.last_ee_pos) / 0.02
-        self.last_ee_pos = ee_pos
+        ee_pos, ee_vel = self.get_ee()
 
         # Reward for moving towards the puck
         # TODO higher reward for hitting than only moving towards
@@ -214,8 +211,10 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
-        ee_pos, _ = self.get_ee()
-        self.last_ee_pos = ee_pos
+        ee_pos, ee_vel = self.get_ee()
+
+        #if absorbing:
+        #    rew += 
 
         # Reward for scoring
         if self.has_scored:

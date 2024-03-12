@@ -67,9 +67,7 @@ class AirHockeyHit(AirHockeySingle):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
-        ee_pos, _ = self.get_ee()
-        ee_vel = (ee_pos - self.last_ee_pos) / 0.02
-        self.last_ee_pos = ee_pos
+        ee_pos, ee_vel = self.get_ee()
 
         # Reward for moving towards the puck
         # TODO higher reward for hitting than only moving towards
@@ -138,11 +136,6 @@ class AirHockeyHit(AirHockeySingle):
     def step(self, action):
         obs, rew, done, info = super().step(action)
         self.add_noise(obs)
-
-        # penalty for ee leaving the boundarys
-        fatal_rew = self.check_fatal(obs)
-        if fatal_rew != 0:
-            return obs, fatal_rew*100, True, info
 
         info['fatal'] = 1 if self.is_fatal else 0
         info['episode_steps'] = self.episode_steps

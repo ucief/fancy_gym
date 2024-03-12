@@ -35,12 +35,16 @@ class MPWrapper(RawInterfaceWrapper):
 
     @property
     def context_mask(self):
+        # Definition of the Observations is defined in env_base.py
         return np.hstack([
             [True] * 2,  # puck XY position
+            [False],     # puck yaw
             [True] * 2,  # puck XY velocity
-            [False] * 6,  # joint positions  (last joint disabled)
+            [False],     # puck yaw velocity
+            [False] * 6,  # joint positions  (last joint disabled) -> not necessary, since it is the same at beginning of episode
+            [False],      # last joint position (disabled)
             [False] * 6,  # joint velocities (last joint disabled)
-            [False] * 21,  # position of target
+            [False],      # last joint velocitie (disabled)
         ])
 
     @property

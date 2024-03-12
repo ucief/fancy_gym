@@ -8,16 +8,11 @@ from fancy_gym.envs.mujoco.air_hockey.utils import inverse_kinematics, forward_k
 class AirhocKIT2023BaseEnv(AirHockeySingle):
     def __init__(self, noise=False, **kwargs):
         super().__init__(**kwargs)
-        obs_low = np.hstack([[-np.inf] * 37])
-        obs_high = np.hstack([[np.inf] * 37])
+        obs_low = np.hstack([[-np.inf] * 20])
+        obs_high = np.hstack([[np.inf] * 20])
         self.wrapper_obs_space = spaces.Box(low=obs_low, high=obs_high, dtype=np.float64)
         self.wrapper_act_space = spaces.Box(low=np.repeat(-100., 6), high=np.repeat(100., 6))
         self.noise = noise
-
-    # We don't need puck yaw observations
-    def filter_obs(self, obs):
-        obs = np.hstack([obs[0:2], obs[3:5], obs[6:12], obs[13:19], obs[20:]])
-        return obs
 
     def add_noise(self, obs):
         if self.noise:
@@ -26,75 +21,15 @@ class AirhocKIT2023BaseEnv(AirHockeySingle):
         return obs
 
     def reset(self):
-        self.last_acceleration = np.repeat(0., 6)
         obs = super().reset()
         obs = self.add_noise(obs)
-        self.interp_pos = obs[self.env_info["joint_pos_ids"]][:-1]
-        self.interp_vel = obs[self.env_info["joint_vel_ids"]][:-1]
-
-        self.last_planned_world_pos = self._fk(self.interp_pos)
-        obs = np.hstack([
-            obs, self.interp_pos, self.interp_vel, self.last_acceleration, self.last_planned_world_pos
-        ])
-        return self.filter_obs(obs)
+        
+        return obs
 
     def step(self, action):
-        #action /= 10
-
-        new_vel = self.interp_vel + action
-
-        jerk = 2 * (new_vel - self.interp_vel - self.last_acceleration * 0.02) / (0.02 ** 2)
-        new_pos = self.interp_pos + self.interp_vel * 0.02 + (1 / 2) * self.last_acceleration * (0.02 ** 2) + (
-                    1 / 6) * jerk * (0.02 ** 3)
-        abs_action = np.vstack([np.hstack([new_pos, 0]), np.hstack([new_vel, 0])])
-        abs_action = np.vstack([np.hstack([action, 0]), np.hstack([0]*7)])
-
-        self.interp_pos = new_pos
-        self.interp_vel = new_vel
-        self.last_acceleration += jerk * 0.02
-
-        obs, rew, done, info = super().step(np.hstack([action, 0]))
+        obs, rew, done, info = super().step(np.hstack([action, 0])) # Last joint is disabled
         obs = self.add_noise(obs)
-        self.last_planned_world_pos = self._fk(self.interp_pos)
-        obs = np.hstack([
-            obs, self.interp_pos, self.interp_vel, self.last_acceleration, self.last_planned_world_pos
-        ])
-        fatal_rew = self.check_fatal(obs)
-        if fatal_rew != 0:
-            return self.filter_obs(obs), fatal_rew*100, True, info
-
-        return self.filter_obs(obs), rew, done, info
-
-    def check_constraints(self, constraint_values):
-        fatal_rew = 0
-
-        j_pos_constr = constraint_values["joint_pos_constr"]
-        if j_pos_constr.max() > 0:
-            fatal_rew += j_pos_constr.max()
-
-        j_vel_constr = constraint_values["joint_vel_constr"]
-        if j_vel_constr.max() > 0:
-            fatal_rew += j_vel_constr.max()
-
-        ee_constr = constraint_values["ee_constr"]
-        if ee_constr.max() > 0:
-            fatal_rew += ee_constr.max()
-
-        link_constr = constraint_values["link_constr"]
-        if link_constr.max() > 0:
-            fatal_rew += link_constr.max()
-
-        return fatal_rew
-
-    def check_fatal(self, obs):
-        fatal_rew = 0
-
-        q = obs[self.env_info["joint_pos_ids"]]
-        qd = obs[self.env_info["joint_vel_ids"]]
-        constraint_values_obs = self.env_info["constraints"].fun(q, qd)
-        fatal_rew += self.check_constraints(constraint_values_obs)
-
-        return -fatal_rew
+        return obs, rew, done, info
 
     def _fk(self, pos):
         res, _ = forward_kinematics(self.env_info["robot"]["robot_model"],
