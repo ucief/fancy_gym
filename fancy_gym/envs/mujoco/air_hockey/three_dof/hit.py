@@ -32,6 +32,7 @@ class AirHockeyHit(AirHockeySingle):
         self.episode_steps = 0
         self.has_scored = False
         self.is_fatal = False
+        self.last_ee_pos = self.get_ee()
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
 
@@ -67,16 +68,23 @@ class AirHockeyHit(AirHockeySingle):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
-        ee_pos, ee_vel = self.get_ee()
+        ee_pos, _ = self.get_ee()
+        ee_vel = 50*(ee_pos - self.last_ee_pos)
+        self.last_ee_pos = ee_pos
 
+        #small reward for operating inside the constraints
+        if not absorbing:
+            rew += 0.1
+        
         # Reward for moving towards the puck
         # TODO higher reward for hitting than only moving towards
         if puck_vel[0] < 0.25 and puck_pos[0] < 0:
             ee_puck_dir = (puck_pos - ee_pos)[:2]
             ee_puck_dir = ee_puck_dir / np.linalg.norm(ee_puck_dir)
+
             rew += 1 * max(0, np.dot(ee_puck_dir, ee_vel[:2]))
-        
-        # Reward for higher puck velocity
+
+        # Reward for higher puck velocity after hit
         else:
             rew += 10 * np.linalg.norm(puck_vel[:2])
 
@@ -89,8 +97,9 @@ class AirHockeyHit(AirHockeySingle):
             # high negative reward for violations of the constraints
             # -2000 if violation in first step to -1000 if violation in last step
             if self.is_fatal:
-                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
-
+                rew -= 1 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+        
+            
         if self.penalty_type in ["linear", "quadratic"]:
             # Penalty for ee_pos close to walls of the table (y-direction)
             rew -= self._get_border_penalty(ee_pos)   
@@ -114,10 +123,10 @@ class AirHockeyHit(AirHockeySingle):
 
         # Penalty
         if self.penalty_type in self.discrete_penalty_types:
-            # high negative reward for violations of the constraints
-            # -2000 if violation in first step to -1000 if violation in last step
+            # negative reward for violations of the constraints
+            # -2 if violation in first step to -1 if violation in last step
             if self.is_fatal:
-                rew -= 1000 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+                rew -= 1 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
 
         return rew
     
@@ -198,9 +207,12 @@ class AirHockeyHit(AirHockeySingle):
         if self.episode_steps >= self._mdp_info.horizon:
             is_absorbing = True
         
+        if not self.is_fatal:
+            self.is_fatal = self.check_fatal(obs)
+        
         if self.is_fatal:
             is_absorbing = True
-        
+
         if is_absorbing:
             return True
         return super(AirHockeyHit, self).is_absorbing(obs)
@@ -213,9 +225,6 @@ class AirHockeyHit(AirHockeySingle):
             boundary = np.array([self.env_info['table']['length'], self.env_info['table']['width']]) / 2
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
 
-        if not self.is_fatal:
-            self.is_fatal = self.check_fatal(cur_obs)
-            
         self.episode_steps += 1
         return super()._step_finalize()
 
