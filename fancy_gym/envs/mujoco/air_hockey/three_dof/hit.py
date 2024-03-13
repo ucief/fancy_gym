@@ -97,7 +97,7 @@ class AirHockeyHit(AirHockeySingle):
             # high negative reward for violations of the constraints
             # -2000 if violation in first step to -1000 if violation in last step
             if self.is_fatal:
-                rew -= 1 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+                rew -= 10 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
         
             
         if self.penalty_type in ["linear", "quadratic"]:
@@ -126,7 +126,7 @@ class AirHockeyHit(AirHockeySingle):
             # negative reward for violations of the constraints
             # -2 if violation in first step to -1 if violation in last step
             if self.is_fatal:
-                rew -= 1 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
+                rew -= 10 *  (2*self._mdp_info.horizon - self.episode_steps) / self._mdp_info.horizon
 
         return rew
     
