@@ -143,6 +143,7 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         self.episode_steps = 0
         self.has_scored = False
         self.is_fatal = False
+        self.last_ee_pos = self.get_ee()[0]
 
     def _step_finalize(self):
         cur_obs = self._create_observation(self.obs_helper._build_obs(self._data))
