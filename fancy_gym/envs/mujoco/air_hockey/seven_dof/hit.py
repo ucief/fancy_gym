@@ -151,9 +151,6 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         if not self.has_scored:
             boundary = np.array([self.env_info['table']['length'], self.env_info['table']['width']]) / 2
             self.has_scored = np.any(np.abs(puck_pos[:2]) > boundary) and puck_pos[0] > 0
-
-        if not self.is_fatal:
-            self.is_fatal = self._check_fatal(cur_obs)
       
         self.episode_steps += 1
         return super()._step_finalize()
@@ -173,8 +170,9 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
-        ee_pos, ee_vel = self.get_ee()
-
+        ee_pos, _ = self.get_ee()
+        ee_vel = 50*(ee_pos - self.last_ee_pos)
+        self.last_ee_pos = ee_pos
         # Reward for moving towards the puck
         # TODO higher reward for hitting than only moving towards
         if puck_vel[0] < 0.25 and puck_pos[0] < 0:
@@ -211,10 +209,6 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
-        ee_pos, ee_vel = self.get_ee()
-
-        #if absorbing:
-        #    rew += 
 
         # Reward for scoring
         if self.has_scored:
@@ -264,6 +258,9 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         if self.episode_steps == self._mdp_info.horizon:
             return True
         
+        if not self.is_fatal:
+            self.is_fatal = self._check_fatal(obs)
+
         if self.is_fatal:
             return True
 
