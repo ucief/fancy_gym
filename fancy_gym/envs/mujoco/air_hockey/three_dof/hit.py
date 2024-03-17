@@ -33,6 +33,7 @@ class AirHockeyHit(AirHockeySingle):
         self.has_scored = False
         self.is_fatal = False
         self.last_ee_pos = self.get_ee()
+        self.last_joint_pos = self.init_state
         # Initial position of the puck
         puck_pos = np.random.rand(2) * (self.hit_range[:, 1] - self.hit_range[:, 0]) + self.hit_range[:, 0]
 
@@ -143,9 +144,11 @@ class AirHockeyHit(AirHockeySingle):
         return obs
 
     def step(self, action):
-        obs, rew, done, info = super().step(action)
+        new_joint_pos = self.last_joint_pos + 0.02*action
+        obs, rew, done, info = super().step(new_joint_pos)
         self.add_noise(obs)
-
+        
+        self.last_joint_pos = new_joint_pos
         info['fatal'] = 1 if self.is_fatal else 0
         info['episode_steps'] = self.episode_steps
         return obs, rew, done, info
