@@ -144,11 +144,15 @@ class AirHockeyHit(AirHockeySingle):
         return obs
 
     def step(self, action):
-        new_joint_pos = self.last_joint_pos + 0.02*action
-        obs, rew, done, info = super().step(new_joint_pos)
+        velocity_control = False
+        if velocity_control:
+            new_joint_pos = self.last_joint_pos + 0.02*action
+            obs, rew, done, info = super().step(new_joint_pos)
+            self.last_joint_pos = new_joint_pos
+        else:
+            obs, rew, done, info = super().step(action)
         self.add_noise(obs)
         
-        self.last_joint_pos = new_joint_pos
         info['fatal'] = 1 if self.is_fatal else 0
         info['episode_steps'] = self.episode_steps
         return obs, rew, done, info
@@ -213,8 +217,8 @@ class AirHockeyHit(AirHockeySingle):
         if not self.is_fatal:
             self.is_fatal = self.check_fatal(obs)
         
-        if self.is_fatal:
-            is_absorbing = True
+        #if self.is_fatal:
+        #    is_absorbing = True
 
         if is_absorbing:
             return True
