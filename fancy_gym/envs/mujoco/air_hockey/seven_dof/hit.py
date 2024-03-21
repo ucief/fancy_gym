@@ -210,6 +210,18 @@ class AirHockeyHitAirhocKIT2023(AirhocKIT2023BaseEnv):
         """
         rew = 0
         puck_pos, puck_vel = self.get_puck(next_state)
+        ee_pos, _ = self.get_ee()
+
+        if absorbing:
+            # if puck is still on your side move closer
+            if np.linalg.norm(puck_vel[:2]) <= self.init_velocity_range[1] and puck_pos[0] < 0:
+                rew -= np.linalg.norm(ee_pos[:2] - puck_pos[:2])
+            # if hit strongly reward based on the resulting velocity
+            if np.linalg.norm(puck_vel[:2]) > self.init_velocity_range[1]:
+                rew += 10*np.linalg.norm(puck_vel[:2])
+            # if puck was hit reward based on distance the puck traveled
+            if puck_pos[0] > 0:
+                rew += 100 * puck_pos[0]
 
         # Reward for scoring
         if self.has_scored:
